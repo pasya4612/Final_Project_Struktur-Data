@@ -266,21 +266,6 @@ void tampilkan_data()
     printf("\nSemua Data (Total: %d) \n", count);
 }
 
-void clear()
-{
-    for (int i = 0; i < TABLE_SIZE; i++)
-    {
-        data *curr = hash_table[i];
-        while (curr)
-        {
-            data *next = curr->next;
-            free(curr);
-            curr = next;
-        }
-        hash_table[i] = NULL;
-    }
-}
-
 void init()
 {
     for (int i = 0; i < TABLE_SIZE; i++)
@@ -338,7 +323,6 @@ int main()
             hapus_data();
             break;
         case 7:
-            clear();
             printf("Program selesai.\n");
             return 0;
         default:
