@@ -4,7 +4,7 @@
 
 #define MAXDATA 100
 #define MAXDATE 20
-#define TABLE_SIZE 1009
+#define TABLE_SIZE 1100
 
 typedef struct data{
     int id;
@@ -24,10 +24,6 @@ unsigned int hash(int key){
 
 data *createNode(int id, const char *name, const char *city, const char *email, const char *date){
     data *newNode = (data *)malloc(sizeof(data));
-    if (newNode == NULL) {
-        printf("Gagal.\n");
-        exit(1);
-    }
     newNode->id = id;
     strcpy(newNode->name, name);
     strcpy(newNode->city, city);
@@ -37,10 +33,10 @@ data *createNode(int id, const char *name, const char *city, const char *email, 
     return newNode;
 }
 
-int idExists(int id){
+int id_ada(int id){
     unsigned int index = hash(id);
     data *curr = hash_table[index];
-    while (curr != NULL){
+    while (curr){
         if (curr->id == id){
             return 1;
         }
@@ -49,8 +45,12 @@ int idExists(int id){
     return 0;
 }
 
-void loadData(const char *filename){
+void load_data(const char *filename){
     FILE *file = fopen(filename, "r");
+    if (!file){
+        printf("File tidak ditemukan.\n");
+        return;
+    }
     char line[500];
     fgets(line, sizeof(line), file); 
 
@@ -60,15 +60,12 @@ void loadData(const char *filename){
         char id_str[20];
         int id;
 
-        int fields = sscanf(line, "%[^,],%[^,],%[^,],%[^,],%[^\n]",
-                            name, id_str, city, date, email);
+        int fields = sscanf(line, "%[^,],%[^,],%[^,],%[^,],%[^\n]", name, id_str, city, date, email);
         if (fields != 5){
             continue;
         }
-
         id = atoi(id_str);
-
-        if (idExists(id)){
+        if (id_ada(id)) {
             continue;
         }
         unsigned int index = hash(id);
@@ -81,13 +78,12 @@ void loadData(const char *filename){
     }
 
     fclose(file);
-    printf("%d data dimuat dari %s (tanpa duplikasi).\n", inserted, filename);
+    printf("%d data dimuat dari %s.\n", inserted, filename);
 }
 
-void cariData(){
+void cari_data(){
     char input[20];
-    printf("\n=== Cari Data Berdasarkan ID ===\n");
-    printf("Masukkan ID: ");
+    printf("\nCari Data Berdasarkan ID \nMasukkan ID: ");
     fgets(input, sizeof(input), stdin);
     input[strcspn(input, "\n")] = 0;
     int id = atoi(input);
@@ -96,7 +92,7 @@ void cariData(){
     int kompleks = 0;
     data *curr = hash_table[index];
 
-    while (curr != NULL){
+    while (curr){
         kompleks++;
         if (curr->id == id){
             printf("\nData ditemukan (kompleksitas: %d)\n", kompleks);
@@ -110,28 +106,98 @@ void cariData(){
         curr = curr->next;
     }
 
-    printf("Data dengan ID %d tidak ditemukan (kompleksitas: %d)\n", id, kompleks);
+    printf("Data dengan ID %d tidak ditemukan (kompleksitas: %d).\n", id, kompleks);
 }
 
-void tampilkanSemuaData(){
-    printf("\n=== Semua Data (Total: %d) ===\n", count);
-    int total = 0;
+void update_data(){
+    char input[20];
+    printf("\nUpdate Data \nMasukkan ID: ");
+    fgets(input, sizeof(input), stdin);
+    input[strcspn(input, "\n")] = 0;
+    int id = atoi(input);
+
+    unsigned int index = hash(id);
+    data *curr = hash_table[index];
+    int kompleks = 0;
+
+    while (curr){
+        kompleks++;
+        if (curr->id == id){
+            printf("Data ditemukan (kompleksitas: %d). Masukkan data baru:\n", kompleks);
+
+            printf("Nama baru: ");
+            fgets(curr->name, MAXDATA, stdin);
+            curr->name[strcspn(curr->name, "\n")] = 0;
+
+            printf("Kota baru: ");
+            fgets(curr->city, MAXDATA, stdin);
+            curr->city[strcspn(curr->city, "\n")] = 0;
+
+            printf("Email baru: ");
+            fgets(curr->email, MAXDATA, stdin);
+            curr->email[strcspn(curr->email, "\n")] = 0;
+
+            printf("Tanggal lahir baru: ");
+            fgets(curr->date, MAXDATE, stdin);
+            curr->date[strcspn(curr->date, "\n")] = 0;
+
+            printf("Data berhasil diperbarui.\n");
+            return;
+        }
+        curr = curr->next;
+    }
+
+    printf("Data dengan ID %d tidak ditemukan (kompleksitas: %d).\n", id, kompleks);
+}
+
+void hapus_data(){
+    char input[20];
+    printf("\nHapus Data \nMasukkan ID: ");
+    fgets(input, sizeof(input), stdin);
+    input[strcspn(input, "\n")] = 0;
+    int id = atoi(input);
+
+    unsigned int index = hash(id);
+    data *curr = hash_table[index];
+    data *prev = NULL;
+    int kompleks = 0;
+
+    while (curr){
+        kompleks++;
+        if (curr->id == id){
+            if (prev) prev->next = curr->next;
+            else hash_table[index] = curr->next;
+
+            free(curr);
+            count--;
+
+            printf("Data dengan ID %d berhasil dihapus (kompleksitas: %d).\n", id, kompleks);
+            return;
+        }
+        prev = curr;
+        curr = curr->next;
+    }
+
+    printf("Data dengan ID %d tidak ditemukan (kompleksitas: %d).\n", id, kompleks);
+}
+
+void tampilkan_data(){
     for (int i = 0; i < TABLE_SIZE; i++){
         data *curr = hash_table[i];
-        while (curr != NULL){
+        while (curr){
             printf("\n- ID              : %d\n", curr->id);
             printf("  Nama            : %s\n", curr->name);
             printf("  Kota            : %s\n", curr->city);
             printf("  Email           : %s\n", curr->email);
             printf("  Tanggal Lahir   : %s\n", curr->date);
             curr = curr->next;
-            total++;
         }
     }
-    printf("\nTotal data: %d\n", total);
+    printf("\nTotal data : %d \n", count);
+
 }
 
-void cleanup(){
+void clear(){
     for (int i = 0; i < TABLE_SIZE; i++){
         data *curr = hash_table[i];
         while (curr){
@@ -151,43 +217,49 @@ void init(){
 }
 
 int main(){
-    int choice;
+    int cmd;
     char filename[100];
     init();
 
-    printf("PROGRAM HASH MAP DATA\n");
+    printf("\nPROGRAM HASH MAP DATA\n");
 
-    while (1) {
-        printf("\nMENU  :\n");
+    while (1){
+        printf("\nMENU:\n");
         printf("1. Muat Data dari File CSV\n");
         printf("2. Cari Data berdasarkan ID\n");
-        printf("3. Tampilkan Data\n");
-        printf("4. Keluar\n");
+        printf("3. Tampilkan Semua Data\n");
+        printf("4. Update Data\n");
+        printf("5. Hapus Data\n");
+        printf("6. Keluar\n");
         printf("Pilihan: ");
-        scanf("%d", &choice);
+        scanf("%d", &cmd);
         while (getchar() != '\n');
 
-        switch (choice){
+        switch (cmd){
             case 1:
                 printf("Masukkan nama file CSV: ");
                 scanf("%s", filename);
                 while (getchar() != '\n');
-                loadData(filename);
+                load_data(filename);
                 break;
             case 2:
-                cariData();
+                cari_data();
                 break;
             case 3:
-                tampilkanSemuaData();
+                tampilkan_data();
                 break;
             case 4:
-                cleanup();
+                update_data();
+                break;
+            case 5:
+                hapus_data();
+                break;
+            case 6:
+                clear();
                 printf("Program selesai.\n");
                 return 0;
             default:
                 printf("Pilihan tidak valid.\n");
         }
     }
-
-    return 0;
 }
